@@ -85,7 +85,7 @@ export async function scanFiles(root: string): Promise<string[]> {
     process.stderr.write(
       `Warning: found ${files.length} files, truncating to ${MAX_FILES}. Consider narrowing the scan path.\n`
     );
-    files.length = MAX_FILES;
+    files.splice(MAX_FILES);
   }
 
   const gitignoreFilters = await loadGitignores(abs);
