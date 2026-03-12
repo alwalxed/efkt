@@ -86,3 +86,42 @@ export default Dashboard;
   // Code blocks must be dedented: no leading whitespace on the useEffect line
   expect(stdout).toContain('```tsx\nuseEffect(');
 });
+
+test('Markdown output normalizes 4-space indent to 2-space', async () => {
+  const dir = await resetFixtureDir('happy-md');
+  await writeFixtureFile(
+    dir,
+    'src/components/Dashboard.tsx',
+    `
+import { useEffect } from "react";
+
+const Dashboard = () => {
+    useEffect(() => {
+        document.title = "Dashboard";
+        if (true) {
+            console.log("nested");
+        }
+    }, []);
+
+    return <div>Dashboard</div>;
+};
+
+export default Dashboard;
+`.trimStart()
+  );
+
+  const { stdout, stderr, exitCode } = await runEfkt(['--md', '.'], dir);
+
+  expect(exitCode).toBe(0);
+  expect(stderr).toBe('');
+
+  // useEffect starts at column 0
+  expect(stdout).toContain('```tsx\nuseEffect(');
+  // first-level body is 2 spaces
+  expect(stdout).toContain('\n  document.title = "Dashboard";\n');
+  // doubly-nested block is 4 spaces (2 levels × 2)
+  expect(stdout).toContain('\n    console.log("nested");\n');
+  // closing }, []) is at column 0 (same indent level as useEffect).
+  // Note: raw is sliced from the CallExpression node, which ends at `)`, not `;`.
+  expect(stdout).toContain('\n}, [])\n```');
+});
