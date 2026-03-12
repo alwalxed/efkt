@@ -74,10 +74,11 @@ export default Dashboard;
   expect(stderr).toBe('');
 
   expect(stdout).toContain('# useEffect Report');
-  expect(stdout).toContain('## ./src/components/Dashboard.tsx');
-  expect(stdout).toContain('Dashboard (line');
-  expect(stdout).toContain('deps: none');
-  expect(stdout).toContain('deps: (none provided)');
-  expect(stdout).toContain('cleanup: yes');
-  expect(stdout).toContain('cleanup: no');
+  expect(stdout).toContain('| scannedAt |');
+  expect(stdout).toContain('| totalFiles |');
+  expect(stdout).toContain('| totalEffects |');
+  expect(stdout).toContain('## emptyDeps_noCleanup');
+  expect(stdout).toContain('## noDeps_withCleanup');
+  expect(stdout).toContain('`Dashboard`** in `./src/components/Dashboard.tsx`');
+  expect(stdout).toContain('```tsx');
 });
