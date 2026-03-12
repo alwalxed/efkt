@@ -1,4 +1,4 @@
-import type { ScanResult } from '../types.ts';
+import type { FormatOptions, ScanResult } from '../types.ts';
 import { CATEGORY_KEYS } from '../types.ts';
 
 function gcd(a: number, b: number): number {
@@ -59,7 +59,25 @@ function dedent(code: string): string {
   return lines.join('\n');
 }
 
-export function formatMarkdown(result: ScanResult): string {
+function stripComments(code: string): string {
+  // Remove block comments /* ... */ (including multiline), then single-line // comments.
+  // Blank lines left by removed comments are collapsed to preserve structure.
+  let result = code.replace(/\/\*[\s\S]*?\*\//g, '');
+  result = result.replace(/\/\/[^\n]*/g, '');
+  // Clean up lines that became entirely whitespace after comment removal
+  result = result
+    .split('\n')
+    .map((line) => (line.trim() === '' ? '' : line))
+    .join('\n');
+  // Collapse runs of 3+ blank lines down to 2
+  result = result.replace(/\n{3,}/g, '\n\n');
+  return result.trim();
+}
+
+export function formatMarkdown(
+  result: ScanResult,
+  opts: FormatOptions = { stripComments: false }
+): string {
   const lines: string[] = [
     '# useEffect Report',
     '',
@@ -73,14 +91,20 @@ export function formatMarkdown(result: ScanResult): string {
     '---',
   ];
 
+  let sectionIndex = 0;
+
   for (const key of CATEGORY_KEYS) {
     const effects = result.effects[key];
     if (!effects || effects.length === 0) continue;
 
-    lines.push('', `## ${key}`);
+    sectionIndex++;
+    lines.push('', `## ${sectionIndex}. ${key}`);
 
-    for (const effect of effects) {
-      lines.push('', `### ${effect.file}`, '', '```tsx', dedent(effect.raw), '```');
+    for (let i = 0; i < effects.length; i++) {
+      const effect = effects[i];
+      if (!effect) continue;
+      const raw = opts.stripComments ? stripComments(dedent(effect.raw)) : dedent(effect.raw);
+      lines.push('', `### ${sectionIndex}.${i + 1} ${effect.file}`, '', '```tsx', raw, '```');
     }
   }
 

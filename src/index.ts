@@ -6,19 +6,24 @@ import { extractEffects } from './extract.ts';
 import { formatJson } from './format/json.ts';
 import { formatMarkdown } from './format/markdown.ts';
 import { scanFiles } from './scan.ts';
-import type { Effect, EffectCategory, GroupedEffects, ScanResult } from './types.ts';
+import type { Effect, EffectCategory, FormatOptions, GroupedEffects, ScanResult } from './types.ts';
+import { CATEGORY_KEYS } from './types.ts';
 
-const USAGE = `Usage: efkt [path] [--json | --md] [--limit <number>]
+const USAGE = `Usage: efkt [path] [--json | --md] [--limit <number>] [--case <category>] [--strip-comments]
 
 Arguments:
-  path              Directory or file to scan (default: ./)
+  path                  Directory or file to scan (default: ./)
 
 Options:
-  --json            Output as JSON
-  --md              Output as Markdown
-  --limit <number>  Only output the first N effects
-  --help            Show this help message
-  --version         Print version`;
+  --json                Output as JSON
+  --md                  Output as Markdown
+  --limit <number>      Only output the first N effects
+  --case <category>     Only output effects from one category
+                        (noDeps_noCleanup | noDeps_withCleanup | deps_noCleanup |
+                         deps_withCleanup | emptyDeps_noCleanup | emptyDeps_withCleanup)
+  --strip-comments      Strip // and /* */ comments from effect bodies in output
+  --help                Show this help message
+  --version             Print version`;
 
 function fatal(message: string): never {
   process.stderr.write(`efkt: ${message}\n`);
@@ -37,6 +42,8 @@ interface ParsedArgs {
   limit: number | null;
   help: boolean;
   version: boolean;
+  stripComments: boolean;
+  case: EffectCategory | null;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -46,6 +53,8 @@ function parseArgs(argv: string[]): ParsedArgs {
   let help = false;
   let version = false;
   let limit: number | null = null;
+  let stripComments = false;
+  let caseFilter: EffectCategory | null = null;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -63,12 +72,23 @@ function parseArgs(argv: string[]): ParsedArgs {
       case '--version':
         version = true;
         break;
+      case '--strip-comments':
+        stripComments = true;
+        break;
       case '--limit': {
         const raw = argv[++i];
         if (raw === undefined) fatal('--limit requires a value');
         const n = Number(raw);
         if (!Number.isInteger(n) || n <= 0) fatal(`invalid --limit value: ${raw}`);
         limit = n;
+        break;
+      }
+      case '--case': {
+        const raw = argv[++i];
+        if (raw === undefined) fatal('--case requires a value');
+        const valid: readonly string[] = CATEGORY_KEYS;
+        if (!valid.includes(raw)) fatal(`invalid --case value: ${raw}`);
+        caseFilter = raw as EffectCategory;
         break;
       }
       default:
@@ -86,6 +106,8 @@ function parseArgs(argv: string[]): ParsedArgs {
     limit,
     help,
     version,
+    stripComments,
+    case: caseFilter,
   };
 }
 
@@ -257,15 +279,30 @@ async function main() {
 
   const limitedEffects = args.limit !== null ? allEffects.slice(0, args.limit) : allEffects;
 
+  const grouped = groupEffects(limitedEffects);
+
+  if (args.case !== null) {
+    const selected = args.case;
+    for (const key of CATEGORY_KEYS) {
+      if (key !== selected) grouped[key] = [];
+    }
+  }
+
+  const totalEffects = CATEGORY_KEYS.reduce((sum, key) => sum + grouped[key].length, 0);
+
   const result: ScanResult = {
     scannedAt: new Date().toISOString(),
     root: args.path,
     totalFiles: uniqueFiles.length,
-    totalEffects: limitedEffects.length,
-    effects: groupEffects(limitedEffects),
+    totalEffects,
+    effects: grouped,
   };
 
-  process.stdout.write(format === 'json' ? formatJson(result) : formatMarkdown(result));
+  const formatOptions: FormatOptions = { stripComments: args.stripComments };
+
+  process.stdout.write(
+    format === 'json' ? formatJson(result, formatOptions) : formatMarkdown(result, formatOptions)
+  );
 }
 
 main().catch((err) => {

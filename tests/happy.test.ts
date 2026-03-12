@@ -77,9 +77,11 @@ export default Dashboard;
   expect(stdout).toContain('| scannedAt |');
   expect(stdout).toContain('| totalFiles |');
   expect(stdout).toContain('| totalEffects |');
-  expect(stdout).toContain('## emptyDeps_noCleanup');
-  expect(stdout).toContain('## noDeps_withCleanup');
-  expect(stdout).toContain('### ./src/components/Dashboard.tsx');
+  // CATEGORY_KEYS order: noDeps_withCleanup (#1) precedes emptyDeps_noCleanup (#2)
+  expect(stdout).toContain('## 1. noDeps_withCleanup');
+  expect(stdout).toContain('## 2. emptyDeps_noCleanup');
+  expect(stdout).toContain('### 1.1 ./src/components/Dashboard.tsx');
+  expect(stdout).toContain('### 2.1 ./src/components/Dashboard.tsx');
   expect(stdout).toContain('useEffect(');
   expect(stdout).toContain('```tsx');
 

@@ -29,3 +29,7 @@ export interface ScanResult {
   totalEffects: number;
   effects: GroupedEffects;
 }
+
+export interface FormatOptions {
+  stripComments: boolean;
+}
