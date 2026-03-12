@@ -19,10 +19,10 @@ export function formatMarkdown(result: ScanResult): string {
     const effects = result.effects[key];
     if (!effects || effects.length === 0) continue;
 
-    lines.push('', `## ${key}`, '');
+    lines.push('', `## ${key}`);
 
     for (const effect of effects) {
-      lines.push('', '```tsx', `// ${effect.file}`, effect.raw, '```');
+      lines.push('', `### ${effect.file}`, '', '```tsx', effect.raw, '```');
     }
   }
 
