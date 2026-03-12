@@ -43,8 +43,6 @@
     "test": "bun test",
     "lint": "biome check . --write",
     "format": "biome format --write . && prettier --write \"**/*.{md,mdx}\"",
-    "lint:ci": "biome check .",
-    "format:ci": "biome format .",
     "prepare": "husky",
     "types": "tsc --noEmit --pretty",
     "release": "npm version"

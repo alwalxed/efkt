@@ -34,6 +34,6 @@ jobs:
         run: bunx @biomejs/biome check .
 
       - name: Format check (Biome, no writes)
-        run: bunx @biomejs/biome format . --check
+        run: bunx @biomejs/biome format .
 
 
