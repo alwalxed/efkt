@@ -8,16 +8,17 @@ import { formatMarkdown } from './format/markdown.ts';
 import { scanFiles } from './scan.ts';
 import type { Effect, EffectCategory, GroupedEffects, ScanResult } from './types.ts';
 
-const USAGE = `Usage: efkt [path] [--json | --md]
+const USAGE = `Usage: efkt [path] [--json | --md] [--limit <number>]
 
 Arguments:
-  path       Directory or file to scan (default: ./)
+  path              Directory or file to scan (default: ./)
 
 Options:
-  --json     Output as JSON
-  --md       Output as Markdown
-  --help     Show this help message
-  --version  Print version`;
+  --json            Output as JSON
+  --md              Output as Markdown
+  --limit <number>  Only output the first N effects
+  --help            Show this help message
+  --version         Print version`;
 
 function fatal(message: string): never {
   process.stderr.write(`efkt: ${message}\n`);
@@ -27,12 +28,13 @@ function fatal(message: string): never {
 async function readVersion(): Promise<string> {
   const pkgPath = resolve(import.meta.dir, '../package.json');
   const pkg = await Bun.file(pkgPath).json();
-  return pkg.version;
+  return pkg.version as string;
 }
 
 interface ParsedArgs {
   path: string;
   format: 'json' | 'md' | null;
+  limit: number | null;
   help: boolean;
   version: boolean;
 }
@@ -43,8 +45,11 @@ function parseArgs(argv: string[]): ParsedArgs {
   let md = false;
   let help = false;
   let version = false;
+  let limit: number | null = null;
 
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === undefined) continue;
     switch (arg) {
       case '--json':
         json = true;
@@ -58,6 +63,14 @@ function parseArgs(argv: string[]): ParsedArgs {
       case '--version':
         version = true;
         break;
+      case '--limit': {
+        const raw = argv[++i];
+        if (raw === undefined) fatal('--limit requires a value');
+        const n = Number(raw);
+        if (!Number.isInteger(n) || n <= 0) fatal(`invalid --limit value: ${raw}`);
+        limit = n;
+        break;
+      }
       default:
         if (!arg.startsWith('-')) path = arg;
     }
@@ -70,6 +83,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   return {
     path,
     format: json ? 'json' : md ? 'md' : null,
+    limit,
     help,
     version,
   };
@@ -87,12 +101,12 @@ async function promptFormat(): Promise<'json' | 'md'> {
     let out = `\x1b[2K? Output format: (Use arrow keys)\n`;
     for (let i = 0; i < options.length; i++) {
       const prefix = i === selected ? '\x1b[36m>\x1b[0m ' : '  ';
-      out += `\x1b[2K${prefix}${options[i]}\n`; // fix: always include \n so line count is consistent
+      out += `\x1b[2K${prefix}${options[i]}\n`;
     }
     process.stderr.write(out);
   }
 
-  return new Promise<'json' | 'md'>((res) => {
+  return new Promise<'json' | 'md'>((resolve, reject) => {
     const stdin = process.stdin;
     stdin.setRawMode(true);
     stdin.resume();
@@ -128,11 +142,16 @@ async function promptFormat(): Promise<'json' | 'md'> {
       if (key === '\r' || key === '\n') {
         cleanup();
         process.stderr.write('\n');
-        res(selected === 0 ? 'md' : 'json');
+        resolve(selected === 0 ? 'md' : 'json');
+        return;
       }
     }
 
     stdin.on('data', onData);
+    stdin.once('error', (err) => {
+      cleanup();
+      reject(err);
+    });
   });
 }
 
@@ -177,8 +196,10 @@ async function main() {
     process.exit(0);
   }
 
+  const resolvedPath = resolve(args.path);
+
   try {
-    await stat(resolve(args.path));
+    await stat(resolvedPath);
   } catch {
     fatal(`path does not exist: ${args.path}`);
   }
@@ -193,31 +214,48 @@ async function main() {
   }
 
   const files = await scanFiles(args.path);
+  const uniqueFiles = [...new Set(files)];
 
-  if (files.length === 0) {
+  if (uniqueFiles.length === 0) {
     process.stderr.write('warning: no .js/.jsx/.ts/.tsx files found\n');
   }
 
   const allEffects: Effect[] = [];
-  for (const file of files) {
-    const absFile = resolve(file);
-    const effects = await extractEffects(absFile, file);
-    allEffects.push(...effects);
+  const errors: string[] = [];
+
+  for (const file of uniqueFiles) {
+    try {
+      const effects = await extractEffects(file, file);
+      allEffects.push(...effects);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`warning: failed to parse ${file}: ${message}`);
+    }
   }
 
-  if (files.length > 0 && allEffects.length === 0) {
+  for (const warning of errors) {
+    process.stderr.write(`${warning}\n`);
+  }
+
+  if (uniqueFiles.length > 0 && allEffects.length === 0 && errors.length === 0) {
     process.stderr.write('0 effects found.\n');
   }
+
+  const limitedEffects = args.limit !== null ? allEffects.slice(0, args.limit) : allEffects;
 
   const result: ScanResult = {
     scannedAt: new Date().toISOString(),
     root: args.path,
-    totalFiles: files.length,
-    totalEffects: allEffects.length,
-    effects: groupEffects(allEffects),
+    totalFiles: uniqueFiles.length,
+    totalEffects: limitedEffects.length,
+    effects: groupEffects(limitedEffects),
   };
 
   process.stdout.write(format === 'json' ? formatJson(result) : formatMarkdown(result));
 }
 
-main();
+main().catch((err) => {
+  const message = err instanceof Error ? err.message : String(err);
+  process.stderr.write(`efkt: unexpected error: ${message}\n`);
+  process.exit(1);
+});
