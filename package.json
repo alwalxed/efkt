@@ -1,15 +1,15 @@
 {
-  "name": "efkt",
+  "name": "@alwalxed/efkt",
   "version": "0.1.0",
   "description": "Extract all useEffect hooks from a React codebase in one shot and print a structured report.",
   "module": "src/index.ts",
-  "main": "dist/index.js",
+  "main": "bin/efkt.js",
   "type": "module",
   "bin": {
-    "efkt": "./dist/index.js"
+    "efkt": "bin/efkt.js"
   },
   "files": [
-    "dist/index.js",
+    "bin/efkt.js",
     "README.md",
     "LICENSE"
   ],
@@ -38,7 +38,7 @@
     "ignore": "^7.0.5"
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outfile ./dist/index.js --target bun",
+    "build": "bun build ./src/index.ts --outfile ./bin/efkt.js --target bun",
     "dev": "bun src/index.ts",
     "test": "bun test",
     "lint": "biome check . --write",

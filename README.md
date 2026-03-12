@@ -5,7 +5,7 @@ Extract `useEffect` hooks from React codebases in one shot. `efkt` scans your pr
 ### Installation
 
 ```sh
-bun install -g efkt
+bun install -g @alwalxed/efkt
 ```
 
 `efkt` runs on Bun. Make sure [Bun](https://bun.sh) is installed before using the global npm package.
