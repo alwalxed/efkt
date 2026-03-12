@@ -1,6 +1,6 @@
 {
   "name": "@alwalxed/efkt",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Extract every useEffect from a React codebase, structured output ready for review or LLM analysis",
   "module": "src/index.ts",
   "main": "bin/efkt.js",
