@@ -1,7 +1,7 @@
 {
   "name": "@alwalxed/efkt",
   "version": "0.1.0",
-  "description": "Extract all useEffect hooks from a React codebase in one shot and print a structured report.",
+  "description": "Extract useEffect hooks from React codebases in one shot.",
   "module": "src/index.ts",
   "main": "bin/efkt.js",
   "type": "module",
