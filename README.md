@@ -1,13 +1,11 @@
 ## efkt
 
-Extract `useEffect` hooks from React codebases in one shot.
-
-`efkt` scans your project, finds every `useEffect` call, and prints a structured report you can feed into other tools or review by hand.
+Extract `useEffect` hooks from React codebases in one shot. `efkt` scans your project, finds every `useEffect` call, and prints a structured report you can feed into other tools or review by hand.
 
 ### Installation
 
 ```sh
-npm install -g efkt
+bun install -g efkt
 ```
 
 `efkt` runs on Bun. Make sure [Bun](https://bun.sh) is installed before using the global npm package.
