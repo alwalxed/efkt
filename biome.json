@@ -16,9 +16,7 @@
       "!**/.turbo",
       "!**/coverage",
       "!**/*.min.js",
-      "!**/tests/fixtures/parse-error",
-      "!**/tests/fixtures/deps-matrix",
-      "!**/tests/fixtures/happy-json"
+      "!**/tests"
     ]
   },
   "formatter": {

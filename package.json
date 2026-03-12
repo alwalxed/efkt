@@ -1,7 +1,9 @@
 {
   "name": "efkt",
   "version": "0.1.0",
+  "description": "Extract all useEffect hooks from a React codebase in one shot and print a structured report.",
   "module": "src/index.ts",
+  "main": "dist/index.js",
   "type": "module",
   "bin": {
     "efkt": "./dist/index.js"
@@ -11,6 +13,16 @@
     "README.md",
     "LICENSE"
   ],
+  "author": "alwalxed",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alwalxed/efkt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alwalxed/efkt/issues"
+  },
+  "homepage": "https://github.com/alwalxed/efkt#readme",
   "devDependencies": {
     "@biomejs/biome": "^2.3.12",
     "@types/babel__traverse": "^7.28.0",
@@ -32,9 +44,21 @@
     "lint": "biome check . --write",
     "format": "biome format --write . && prettier --write \"**/*.{md,mdx}\"",
     "lint:ci": "biome check .",
-    "format:ci": "biome format . --check",
+    "format:ci": "biome format .",
     "prepare": "husky",
     "types": "tsc --noEmit --pretty",
     "release": "npm version"
-  }
+  },
+  "keywords": [
+    "efkt",
+    "react",
+    "useEffect",
+    "react-hooks",
+    "hooks",
+    "cli",
+    "code-analysis",
+    "static-analysis",
+    "refactoring",
+    "typescript"
+  ]
 }

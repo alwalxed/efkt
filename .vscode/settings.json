@@ -7,7 +7,14 @@
   "explorer.fileNesting.patterns": {
     "package.json": "README.md,pnpm-lock.yaml,.gitignore,.prettierrc.json,tsconfig.json,LICENSE,bun.lock,biome.json,.npmrc"
   },
-  "cSpell.words": ["alwalxed", "efkt"],
+  "cSpell.words": [
+    "Activedescendant",
+    "alwalxed",
+    "efkt",
+    "Focusable",
+    "Noninteractive",
+    "Tabindex"
+  ],
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true
 }
