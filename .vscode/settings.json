@@ -5,7 +5,7 @@
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.expand": false,
   "explorer.fileNesting.patterns": {
-    "package.json": "README.md,pnpm-lock.yaml,.gitignore,.prettierrc.json,tsconfig.json,LICENSE,bun.lock,biome.json"
+    "package.json": "README.md,pnpm-lock.yaml,.gitignore,.prettierrc.json,tsconfig.json,LICENSE,bun.lock,biome.json,.npmrc"
   },
   "cSpell.words": ["alwalxed", "efkt"],
   "typescript.tsdk": "node_modules/typescript/lib",
