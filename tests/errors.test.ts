@@ -113,7 +113,7 @@ export function add(a: number, b: number): number {
   expect(parsed.totalEffects).toBe(0);
 });
 
-test('file unreadable produces warning and continues', async () => {
+test('scanning empty directory warns and exits 0', async () => {
   const dir = await resetFixtureDir('unreadable');
   await writeFixtureFile(
     dir,

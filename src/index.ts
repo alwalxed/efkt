@@ -173,7 +173,6 @@ function groupEffects(effects: Effect[]): GroupedEffects {
     deps_withCleanup: [],
     emptyDeps_noCleanup: [],
     emptyDeps_withCleanup: [],
-    other: [],
   };
 
   for (const effect of effects) {

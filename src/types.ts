@@ -16,7 +16,6 @@ export const CATEGORY_KEYS = [
   'deps_withCleanup',
   'emptyDeps_noCleanup',
   'emptyDeps_withCleanup',
-  'other',
 ] as const;
 
 export type EffectCategory = (typeof CATEGORY_KEYS)[number];

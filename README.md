@@ -1,6 +1,6 @@
 ## efkt
 
-Extract `useEffect` hooks from React codebases in one shot. `efkt` scans your project, finds every `useEffect` call, and prints a structured report you can feed into other tools or review by hand.
+Most codebases abuse `useEffect`. This tool scans your React project, finds every `useEffect` call, and prints a structured report you can review by hand or feed straight into an LLM to surface the worst offenders fast.
 
 ### Installation
 
@@ -11,12 +11,13 @@ pnpm install -g @alwalxed/efkt
 ### Usage
 
 ```sh
-efkt [path] [--json | --md]
+efkt [path] [--json | --md] [--limit <number>]
 ```
 
 - **path**: directory or file to scan (defaults to `./`).
 - **--json**: output a JSON object describing all effects.
 - **--md**: output a Markdown report.
+- **--limit**: cap the number of effects included in the output (also affects `totalEffects`).
 - **--help**: print usage and exit `0`.
 - **--version**: print the version from `package.json` and exit `0`.
 
@@ -28,7 +29,7 @@ The JSON output groups effects by behavioral category, ordered from highest to l
 
 ```json
 {
-  "scannedAt": "2026-03-12T10:10:29.619Z",
+  "scannedAt": "<ISO 8601 timestamp>",
   "root": "./src",
   "totalFiles": 836,
   "totalEffects": 179,
@@ -38,8 +39,7 @@ The JSON output groups effects by behavioral category, ordered from highest to l
     "deps_noCleanup": [],
     "deps_withCleanup": [],
     "emptyDeps_noCleanup": [],
-    "emptyDeps_withCleanup": [],
-    "other": []
+    "emptyDeps_withCleanup": []
   }
 }
 ```
@@ -52,21 +52,6 @@ The JSON output groups effects by behavioral category, ordered from highest to l
 | `deps_withCleanup`      | `[dep1, dep2, ...]` | yes     |
 | `emptyDeps_noCleanup`   | `[]`                | no      |
 | `emptyDeps_withCleanup` | `[]`                | yes     |
-| `other`                 | unclassifiable      | —       |
-
-Each effect entry has the shape:
-
-```json
-{
-  "file": "./src/App.tsx",
-  "component": "App",
-  "startLine": 12,
-  "endLine": 18,
-  "body": "...",
-  "deps": ["value"],
-  "hasCleanup": false
-}
-```
 
 ### Examples
 
@@ -82,12 +67,15 @@ efkt src/ --md > effects.md
 
 # Scan a single file
 efkt src/components/Auth.tsx --json
+
+# Copy to clipboard
+efkt ./src --md | pbcopy
 ```
 
 ### Behavior
 
 - Scans `**/*.{js,jsx,ts,tsx}` under the given path.
-- Detects `useEffect` calls that use arrow function callbacks.
+- Detects `useEffect` calls that use arrow function or regular function callbacks.
 - Always ignores `node_modules/`, `dist/`, `build/`, `out/`, `coverage/`, `.next/`, `.turbo/`, `.git/`.
 - Respects `.gitignore` rules at the root and in nested directories.
 - On success (including "no files" or "0 effects found"), exits `0` and writes a complete result to stdout.
