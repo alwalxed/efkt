@@ -45,54 +45,55 @@ test('--strip-comments removes // and /* */ from JSON raw and body fields', asyn
   expect(exitCode).toBe(0);
 
   const parsed = JSON.parse(stdout) as {
-    effects: Record<string, Array<{ raw: string; body: string }>>;
+    effects: Record<string, Record<string, Array<{ raw: string; body: string }>>>;
   };
 
-  const depsEffect = parsed.effects.deps_noCleanup?.[0];
+  const depsEffect = parsed.effects.reactive?.plain?.[0];
   expect(depsEffect).toBeDefined();
   expect(depsEffect?.raw).not.toContain('// Fetch on mount');
   expect(depsEffect?.raw).not.toContain('/* block comment */');
   expect(depsEffect?.raw).not.toContain('// inline comment');
   expect(depsEffect?.raw).toContain('fetchData(id)');
 
-  const noDepsEffect = parsed.effects.noDeps_noCleanup?.[0];
+  const noDepsEffect = parsed.effects.untracked?.plain?.[0];
   expect(noDepsEffect).toBeDefined();
   expect(noDepsEffect?.raw).toContain('console.log');
 });
 
-test('--case filters output to only the specified category', async () => {
+test('--case filters output to only the specified sub-category', async () => {
   const dir = await resetFixtureDir('case-filter');
   await writeFixtureFile(dir, 'src/MyComp.tsx', FIXTURE_SOURCE);
 
-  const { stdout, exitCode } = await runEfkt(['--json', '--case', 'deps_noCleanup', '.'], dir);
+  const { stdout, exitCode } = await runEfkt(['--json', '--case', 'reactive.plain', '.'], dir);
 
   expect(exitCode).toBe(0);
 
   const parsed = JSON.parse(stdout) as {
     totalEffects: number;
-    effects: Record<string, unknown[]>;
+    effects: Record<string, Record<string, unknown[]>>;
   };
 
   expect(parsed.totalEffects).toBe(1);
-  expect(parsed.effects.deps_noCleanup).toHaveLength(1);
-  expect(parsed.effects.noDeps_noCleanup).toHaveLength(0);
+  expect(parsed.effects.reactive.plain).toHaveLength(1);
+  expect(parsed.effects.untracked.plain).toHaveLength(0);
 });
 
 test('--case filters Markdown to only show the specified section', async () => {
   const dir = await resetFixtureDir('case-filter-md');
   await writeFixtureFile(dir, 'src/MyComp.tsx', FIXTURE_SOURCE);
 
-  const { stdout, exitCode } = await runEfkt(['--md', '--case', 'noDeps_noCleanup', '.'], dir);
+  const { stdout, exitCode } = await runEfkt(['--md', '--case', 'untracked.plain', '.'], dir);
 
   expect(exitCode).toBe(0);
 
-  expect(stdout).toContain('## 1. noDeps_noCleanup');
-  expect(stdout).not.toContain('deps_noCleanup');
-  // Hierarchical numbering for the single effect
-  expect(stdout).toContain('### 1.1 ./src/MyComp.tsx');
+  expect(stdout).toContain('## 1. untracked');
+  expect(stdout).toContain('### 1.1 plain');
+  expect(stdout).toContain('#### 1.1.1 ./src/MyComp.tsx');
+  expect(stdout).not.toContain('reactive');
+  expect(stdout).not.toContain('once');
 });
 
-test('--case with an invalid category name exits 1 with an error', async () => {
+test('--case with an invalid value exits 1 with an error', async () => {
   const { stdout, stderr, exitCode } = await runEfkt(['--json', '--case', 'invalid_category', '.']);
 
   expect(exitCode).toBe(1);
@@ -100,12 +101,20 @@ test('--case with an invalid category name exits 1 with an error', async () => {
   expect(stderr).toContain('invalid --case value: invalid_category');
 });
 
+test('--case with a valid group but invalid subgroup exits 1', async () => {
+  const { stdout, stderr, exitCode } = await runEfkt(['--json', '--case', 'reactive.bad', '.']);
+
+  expect(exitCode).toBe(1);
+  expect(stdout).toBe('');
+  expect(stderr).toContain('invalid --case value: reactive.bad');
+});
+
 test('--case combined with --strip-comments applies both', async () => {
   const dir = await resetFixtureDir('case-strip-combined');
   await writeFixtureFile(dir, 'src/MyComp.tsx', FIXTURE_SOURCE);
 
   const { stdout, exitCode } = await runEfkt(
-    ['--json', '--case', 'deps_noCleanup', '--strip-comments', '.'],
+    ['--json', '--case', 'reactive.plain', '--strip-comments', '.'],
     dir
   );
 
@@ -113,12 +122,12 @@ test('--case combined with --strip-comments applies both', async () => {
 
   const parsed = JSON.parse(stdout) as {
     totalEffects: number;
-    effects: Record<string, Array<{ raw: string }>>;
+    effects: Record<string, Record<string, Array<{ raw: string }>>>;
   };
 
   expect(parsed.totalEffects).toBe(1);
 
-  const effect = parsed.effects.deps_noCleanup?.[0];
+  const effect = parsed.effects.reactive?.plain?.[0];
   expect(effect).toBeDefined();
   expect(effect?.raw).not.toContain('// Fetch on mount');
   expect(effect?.raw).not.toContain('/* block comment */');

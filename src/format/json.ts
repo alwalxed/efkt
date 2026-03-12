@@ -1,5 +1,5 @@
 import type { Effect, FormatOptions, ScanResult } from '../types.ts';
-import { CATEGORY_KEYS } from '../types.ts';
+import { GROUP_KEYS, SUBGROUP_KEYS } from '../types.ts';
 
 function stripComments(code: string): string {
   let result = code.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -31,7 +31,12 @@ export function formatJson(
   const stripped = {
     ...result,
     effects: Object.fromEntries(
-      CATEGORY_KEYS.map((key) => [key, result.effects[key].map(stripEffectComments)])
+      GROUP_KEYS.map((group) => [
+        group,
+        Object.fromEntries(
+          SUBGROUP_KEYS.map((sub) => [sub, result.effects[group][sub].map(stripEffectComments)])
+        ),
+      ])
     ),
   };
 

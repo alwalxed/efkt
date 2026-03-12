@@ -6,24 +6,32 @@ import { extractEffects } from './extract.ts';
 import { formatJson } from './format/json.ts';
 import { formatMarkdown } from './format/markdown.ts';
 import { scanFiles } from './scan.ts';
-import type { Effect, EffectCategory, FormatOptions, GroupedEffects, ScanResult } from './types.ts';
-import { CATEGORY_KEYS } from './types.ts';
+import type {
+  Effect,
+  EffectGroup,
+  EffectSubgroup,
+  FormatOptions,
+  GroupedEffects,
+  ScanResult,
+} from './types.ts';
+import { GROUP_KEYS, SUBGROUP_KEYS } from './types.ts';
 
-const USAGE = `Usage: efkt [path] [--json | --md] [--limit <number>] [--case <category>] [--strip-comments]
+const USAGE = `Usage: efkt [path] [--json|--md] [--limit N] [--case <group.sub>] [--strip-comments]
 
 Arguments:
-  path                  Directory or file to scan (default: ./)
+  path               Directory or file to scan (default: ./)
 
 Options:
-  --json                Output as JSON
-  --md                  Output as Markdown
-  --limit <number>      Only output the first N effects
-  --case <category>     Only output effects from one category
-                        (noDeps_noCleanup | noDeps_withCleanup | deps_noCleanup |
-                         deps_withCleanup | emptyDeps_noCleanup | emptyDeps_withCleanup)
-  --strip-comments      Strip // and /* */ comments from effect bodies in output
-  --help                Show this help message
-  --version             Print version`;
+  --json             Output as JSON
+  --md               Output as Markdown
+  --limit N          Truncate output to N effects
+  --case <group.sub> Filter by sub-category
+                       group: untracked | reactive | once
+                       sub:   plain | cleanup
+                       e.g.   --case reactive.plain
+  --strip-comments   Strip comments from effect bodies
+  --help             Show this help
+  --version          Print version`;
 
 function fatal(message: string): never {
   process.stderr.write(`efkt: ${message}\n`);
@@ -36,6 +44,11 @@ async function readVersion(): Promise<string> {
   return pkg.version as string;
 }
 
+interface CaseFilter {
+  group: EffectGroup;
+  subgroup: EffectSubgroup;
+}
+
 interface ParsedArgs {
   path: string;
   format: 'json' | 'md' | null;
@@ -43,7 +56,7 @@ interface ParsedArgs {
   help: boolean;
   version: boolean;
   stripComments: boolean;
-  case: EffectCategory | null;
+  case: CaseFilter | null;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -54,7 +67,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   let version = false;
   let limit: number | null = null;
   let stripComments = false;
-  let caseFilter: EffectCategory | null = null;
+  let caseFilter: CaseFilter | null = null;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -86,9 +99,17 @@ function parseArgs(argv: string[]): ParsedArgs {
       case '--case': {
         const raw = argv[++i];
         if (raw === undefined) fatal('--case requires a value');
-        const valid: readonly string[] = CATEGORY_KEYS;
-        if (!valid.includes(raw)) fatal(`invalid --case value: ${raw}`);
-        caseFilter = raw as EffectCategory;
+        const parts = raw.split('.');
+        const group = parts[0];
+        const subgroup = parts[1];
+        if (
+          parts.length !== 2 ||
+          !GROUP_KEYS.includes(group as EffectGroup) ||
+          !SUBGROUP_KEYS.includes(subgroup as EffectSubgroup)
+        ) {
+          fatal(`invalid --case value: ${raw}`);
+        }
+        caseFilter = { group: group as EffectGroup, subgroup: subgroup as EffectSubgroup };
         break;
       }
       default:
@@ -177,28 +198,23 @@ async function promptFormat(): Promise<'json' | 'md'> {
   });
 }
 
-function classifyEffect(effect: Effect): EffectCategory {
-  if (effect.deps === null) {
-    return effect.hasCleanup ? 'noDeps_withCleanup' : 'noDeps_noCleanup';
-  }
-  if (effect.deps.length === 0) {
-    return effect.hasCleanup ? 'emptyDeps_withCleanup' : 'emptyDeps_noCleanup';
-  }
-  return effect.hasCleanup ? 'deps_withCleanup' : 'deps_noCleanup';
+function classifyEffect(effect: Effect): { group: EffectGroup; subgroup: EffectSubgroup } {
+  const subgroup: EffectSubgroup = effect.hasCleanup ? 'cleanup' : 'plain';
+  if (effect.deps === null) return { group: 'untracked', subgroup };
+  if (effect.deps.length === 0) return { group: 'once', subgroup };
+  return { group: 'reactive', subgroup };
 }
 
 function groupEffects(effects: Effect[]): GroupedEffects {
   const grouped: GroupedEffects = {
-    noDeps_noCleanup: [],
-    noDeps_withCleanup: [],
-    deps_noCleanup: [],
-    deps_withCleanup: [],
-    emptyDeps_noCleanup: [],
-    emptyDeps_withCleanup: [],
+    untracked: { plain: [], cleanup: [] },
+    reactive: { plain: [], cleanup: [] },
+    once: { plain: [], cleanup: [] },
   };
 
   for (const effect of effects) {
-    grouped[classifyEffect(effect)].push(effect);
+    const { group, subgroup } = classifyEffect(effect);
+    grouped[group][subgroup].push(effect);
   }
 
   return grouped;
@@ -282,13 +298,18 @@ async function main() {
   const grouped = groupEffects(limitedEffects);
 
   if (args.case !== null) {
-    const selected = args.case;
-    for (const key of CATEGORY_KEYS) {
-      if (key !== selected) grouped[key] = [];
+    const { group: selGroup, subgroup: selSub } = args.case;
+    for (const g of GROUP_KEYS) {
+      for (const s of SUBGROUP_KEYS) {
+        if (g !== selGroup || s !== selSub) grouped[g][s] = [];
+      }
     }
   }
 
-  const totalEffects = CATEGORY_KEYS.reduce((sum, key) => sum + grouped[key].length, 0);
+  const totalEffects = GROUP_KEYS.reduce(
+    (sum, g) => sum + SUBGROUP_KEYS.reduce((s2, s) => s2 + grouped[g][s].length, 0),
+    0
+  );
 
   const result: ScanResult = {
     scannedAt: new Date().toISOString(),

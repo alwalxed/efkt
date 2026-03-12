@@ -1,5 +1,5 @@
 import type { FormatOptions, ScanResult } from '../types.ts';
-import { CATEGORY_KEYS } from '../types.ts';
+import { GROUP_KEYS, SUBGROUP_KEYS } from '../types.ts';
 
 function gcd(a: number, b: number): number {
   let x = a;
@@ -91,20 +91,38 @@ export function formatMarkdown(
     '---',
   ];
 
-  let sectionIndex = 0;
+  let groupIdx = 0;
 
-  for (const key of CATEGORY_KEYS) {
-    const effects = result.effects[key];
-    if (!effects || effects.length === 0) continue;
+  for (const group of GROUP_KEYS) {
+    const subgroups = result.effects[group];
+    const groupHasEffects = SUBGROUP_KEYS.some((s) => subgroups[s].length > 0);
+    if (!groupHasEffects) continue;
 
-    sectionIndex++;
-    lines.push('', `## ${sectionIndex}. ${key}`);
+    groupIdx++;
+    lines.push('', `## ${groupIdx}. ${group}`);
 
-    for (let i = 0; i < effects.length; i++) {
-      const effect = effects[i];
-      if (!effect) continue;
-      const raw = opts.stripComments ? stripComments(dedent(effect.raw)) : dedent(effect.raw);
-      lines.push('', `### ${sectionIndex}.${i + 1} ${effect.file}`, '', '```tsx', raw, '```');
+    let subIdx = 0;
+
+    for (const sub of SUBGROUP_KEYS) {
+      const effects = subgroups[sub];
+      if (effects.length === 0) continue;
+
+      subIdx++;
+      lines.push('', `### ${groupIdx}.${subIdx} ${sub}`);
+
+      for (let i = 0; i < effects.length; i++) {
+        const effect = effects[i];
+        if (!effect) continue;
+        const raw = opts.stripComments ? stripComments(dedent(effect.raw)) : dedent(effect.raw);
+        lines.push(
+          '',
+          `#### ${groupIdx}.${subIdx}.${i + 1} ${effect.file}`,
+          '',
+          '```tsx',
+          raw,
+          '```'
+        );
+      }
     }
   }
 

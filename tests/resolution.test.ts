@@ -57,10 +57,12 @@ useEffect(() => {}, []);
 
   expect(exitCode).toBe(0);
   const parsed = JSON.parse(stdout) as {
-    effects: Record<string, Array<{ component: string | null }>>;
+    effects: Record<string, Record<string, Array<{ component: string | null }>>>;
   };
 
-  const components = Object.values(parsed.effects).flat().map((e) => e.component);
+  const components = Object.values(parsed.effects)
+    .flatMap((g) => Object.values(g).flat())
+    .map((e) => e.component);
   expect(components).toContain('Named');
   expect(components).toContain('Arrow');
   expect(components).toContain(null);

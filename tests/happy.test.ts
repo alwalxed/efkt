@@ -31,15 +31,15 @@ export function AuthForm({ userId, token }: { userId: string; token: string }) {
   const parsed = JSON.parse(stdout) as {
     totalFiles: number;
     totalEffects: number;
-    effects: Record<string, EffectEntry[]>;
+    effects: Record<string, Record<string, EffectEntry[]>>;
   };
 
   expect(parsed.totalFiles).toBe(1);
   expect(parsed.totalEffects).toBe(1);
-  expect(parsed.effects.deps_noCleanup[0].file).toBe('./src/components/Auth.tsx');
-  expect(parsed.effects.deps_noCleanup[0].component).toBe('AuthForm');
-  expect(parsed.effects.deps_noCleanup[0].deps).toEqual(['userId', 'token']);
-  expect(parsed.effects.deps_noCleanup[0].hasCleanup).toBe(false);
+  expect(parsed.effects.reactive.plain[0].file).toBe('./src/components/Auth.tsx');
+  expect(parsed.effects.reactive.plain[0].component).toBe('AuthForm');
+  expect(parsed.effects.reactive.plain[0].deps).toEqual(['userId', 'token']);
+  expect(parsed.effects.reactive.plain[0].hasCleanup).toBe(false);
 });
 
 test('Markdown output basic', async () => {
@@ -77,11 +77,13 @@ export default Dashboard;
   expect(stdout).toContain('| scannedAt |');
   expect(stdout).toContain('| totalFiles |');
   expect(stdout).toContain('| totalEffects |');
-  // CATEGORY_KEYS order: noDeps_withCleanup (#1) precedes emptyDeps_noCleanup (#2)
-  expect(stdout).toContain('## 1. noDeps_withCleanup');
-  expect(stdout).toContain('## 2. emptyDeps_noCleanup');
-  expect(stdout).toContain('### 1.1 ./src/components/Dashboard.tsx');
-  expect(stdout).toContain('### 2.1 ./src/components/Dashboard.tsx');
+  // untracked (no dep array, with cleanup) is group 1; once (empty deps, no cleanup) is group 2
+  expect(stdout).toContain('## 1. untracked');
+  expect(stdout).toContain('### 1.1 cleanup');
+  expect(stdout).toContain('#### 1.1.1 ./src/components/Dashboard.tsx');
+  expect(stdout).toContain('## 2. once');
+  expect(stdout).toContain('### 2.1 plain');
+  expect(stdout).toContain('#### 2.1.1 ./src/components/Dashboard.tsx');
   expect(stdout).toContain('useEffect(');
   expect(stdout).toContain('```tsx');
 

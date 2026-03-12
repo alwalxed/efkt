@@ -9,18 +9,13 @@ export interface Effect {
   hasCleanup: boolean;
 }
 
-export const CATEGORY_KEYS = [
-  'noDeps_noCleanup',
-  'noDeps_withCleanup',
-  'deps_noCleanup',
-  'deps_withCleanup',
-  'emptyDeps_noCleanup',
-  'emptyDeps_withCleanup',
-] as const;
+export const GROUP_KEYS = ['untracked', 'reactive', 'once'] as const;
+export type EffectGroup = (typeof GROUP_KEYS)[number];
 
-export type EffectCategory = (typeof CATEGORY_KEYS)[number];
+export const SUBGROUP_KEYS = ['plain', 'cleanup'] as const;
+export type EffectSubgroup = (typeof SUBGROUP_KEYS)[number];
 
-export type GroupedEffects = Record<EffectCategory, Effect[]>;
+export type GroupedEffects = Record<EffectGroup, Record<EffectSubgroup, Effect[]>>;
 
 export interface ScanResult {
   scannedAt: string;

@@ -23,19 +23,19 @@ export function UseDeps(a: any, b: any) {
 
   expect(exitCode).toBe(0);
   const parsed = JSON.parse(stdout) as {
-    effects: Record<string, Array<{ deps: string[] | null }>>;
+    effects: Record<string, Record<string, Array<{ deps: string[] | null }>>>;
   };
 
-  // [a, b] -> deps_noCleanup[0]
-  expect(parsed.effects.deps_noCleanup[0].deps).toEqual(['a', 'b']);
-  // [] -> emptyDeps_noCleanup[0]
-  expect(parsed.effects.emptyDeps_noCleanup[0].deps).toEqual([]);
-  // [a.b, fn()] -> deps_noCleanup[1]
-  expect(parsed.effects.deps_noCleanup[1].deps).toEqual(['a.b', 'fn()']);
-  // undefined as any -> null deps -> noDeps_noCleanup[0]
-  expect(parsed.effects.noDeps_noCleanup[0].deps).toBeNull();
-  // no dep arg -> null deps -> noDeps_noCleanup[1]
-  expect(parsed.effects.noDeps_noCleanup[1].deps).toBeNull();
+  // [a, b] -> reactive.plain[0]
+  expect(parsed.effects.reactive.plain[0].deps).toEqual(['a', 'b']);
+  // [] -> once.plain[0]
+  expect(parsed.effects.once.plain[0].deps).toEqual([]);
+  // [a.b, fn()] -> reactive.plain[1]
+  expect(parsed.effects.reactive.plain[1].deps).toEqual(['a.b', 'fn()']);
+  // undefined as any -> null deps -> untracked.plain[0]
+  expect(parsed.effects.untracked.plain[0].deps).toBeNull();
+  // no dep arg -> null deps -> untracked.plain[1]
+  expect(parsed.effects.untracked.plain[1].deps).toBeNull();
 });
 
 test('hasCleanup detection', async () => {
@@ -63,11 +63,11 @@ export function UseCleanup(url: string) {
 
   expect(exitCode).toBe(0);
   const parsed = JSON.parse(stdout) as {
-    effects: Record<string, Array<{ hasCleanup: boolean }>>;
+    effects: Record<string, Record<string, Array<{ hasCleanup: boolean }>>>;
   };
 
-  // [url] + cleanup -> deps_withCleanup
-  expect(parsed.effects.deps_withCleanup[0].hasCleanup).toBe(true);
-  // [] + no cleanup -> emptyDeps_noCleanup
-  expect(parsed.effects.emptyDeps_noCleanup[0].hasCleanup).toBe(false);
+  // [url] + cleanup -> reactive.cleanup
+  expect(parsed.effects.reactive.cleanup[0].hasCleanup).toBe(true);
+  // [] + no cleanup -> once.plain
+  expect(parsed.effects.once.plain[0].hasCleanup).toBe(false);
 });
