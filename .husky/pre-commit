@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 set -e
 
+export PATH="$HOME/.bun/bin:$PATH"
+
 echo "Formatting code..."
 bun run format
 
