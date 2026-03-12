@@ -1,6 +1,6 @@
 {
   "name": "@alwalxed/efkt",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Scan, categorize, and export every useEffect in your React project",
   "module": "src/index.ts",
   "main": "bin/efkt.js",
