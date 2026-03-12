@@ -293,15 +293,27 @@ async function main() {
     process.stderr.write('0 effects found.\n');
   }
 
-  const limitedEffects = args.limit !== null ? allEffects.slice(0, args.limit) : allEffects;
-
-  const grouped = groupEffects(limitedEffects);
+  const grouped = groupEffects(allEffects);
 
   if (args.case !== null) {
     const { group: selGroup, subgroup: selSub } = args.case;
     for (const g of GROUP_KEYS) {
       for (const s of SUBGROUP_KEYS) {
         if (g !== selGroup || s !== selSub) grouped[g][s] = [];
+      }
+    }
+  }
+
+  if (args.limit !== null) {
+    let remaining = args.limit;
+    for (const g of GROUP_KEYS) {
+      for (const s of SUBGROUP_KEYS) {
+        if (remaining <= 0) {
+          grouped[g][s] = [];
+        } else {
+          grouped[g][s] = grouped[g][s].slice(0, remaining);
+          remaining -= grouped[g][s].length;
+        }
       }
     }
   }

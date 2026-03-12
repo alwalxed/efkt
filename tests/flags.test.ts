@@ -133,3 +133,42 @@ test('--case combined with --strip-comments applies both', async () => {
   expect(effect?.raw).not.toContain('/* block comment */');
   expect(effect?.raw).toContain('fetchData(id)');
 });
+
+test('--limit applied after --case returns effects, not 0', async () => {
+  const dir = await resetFixtureDir('limit-after-case');
+  await writeFixtureFile(
+    dir,
+    'src/hooks/useMount.ts',
+    `
+import { useEffect } from "react";
+
+export function A() {
+  useEffect(() => { return () => {}; }, []);
+}
+export function B() {
+  useEffect(() => { return () => {}; }, []);
+}
+export function C() {
+  useEffect(() => { return () => {}; }, []);
+}
+export function D() {
+  useEffect(() => { fetchData(); }, [id]);
+}
+`.trimStart()
+  );
+
+  const { stdout, exitCode } = await runEfkt(
+    ['--json', '--case', 'once.cleanup', '--limit', '2', '.'],
+    dir
+  );
+
+  expect(exitCode).toBe(0);
+
+  const parsed = JSON.parse(stdout) as {
+    totalEffects: number;
+    effects: Record<string, Record<string, unknown[]>>;
+  };
+
+  expect(parsed.totalEffects).toBe(2);
+  expect(parsed.effects.once.cleanup).toHaveLength(2);
+});
