@@ -1,0 +1,39 @@
+{
+  "name": "efkt",
+  "version": "0.1.0",
+  "module": "src/index.ts",
+  "type": "module",
+  "bin": {
+    "efkt": "./dist/index.js"
+  },
+  "files": [
+    "dist/index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.12",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/bun": "latest",
+    "prettier": "^3.4.2",
+    "husky": "^9.1.7",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.0",
+    "@babel/traverse": "^7.29.0",
+    "fast-glob": "^3.3.3",
+    "ignore": "^7.0.5"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outfile ./dist/index.js --target bun",
+    "dev": "bun src/index.ts",
+    "test": "bun test",
+    "lint": "biome check . --write",
+    "format": "biome format --write . && prettier --write \"**/*.{md,mdx}\"",
+    "lint:ci": "biome check .",
+    "format:ci": "biome format . --check",
+    "prepare": "husky",
+    "types": "tsc --noEmit --pretty"
+  }
+}

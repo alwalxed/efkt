@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+set -e
+
+echo "Formatting code..."
+bun run format
+
+echo "Linting and fixing..."
+bun run lint
+
+echo "Checking types..."
+bun run types
+
+echo "Pre-commit checks passed!"
