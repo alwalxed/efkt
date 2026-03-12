@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 export function UseWeird() {
-  useEffect(() => {}, []);
+  useEffect(function () {}, []);
   // @ts-expect-error intentionally malformed call
   useEffect();
 }

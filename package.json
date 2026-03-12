@@ -45,7 +45,8 @@
     "format": "biome format --write . && prettier --write \"**/*.{md,mdx}\"",
     "prepare": "husky",
     "types": "tsc --noEmit --pretty",
-    "release": "npm version"
+    "release": "npm version",
+    "ci": "bun run format && bun run lint && bun run types && bun run test && bun run build"
   },
   "keywords": [
     "efkt",

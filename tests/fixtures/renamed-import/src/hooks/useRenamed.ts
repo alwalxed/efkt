@@ -1,4 +1,4 @@
-import { useEffect as ue } from 'react';
+import { useEffect as ue } from "react";
 
 export function UseRenamed() {
   ue(() => {}, []);

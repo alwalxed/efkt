@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 export function UseCleanup(url: string) {
   useEffect(() => {
@@ -7,6 +7,6 @@ export function UseCleanup(url: string) {
   }, [url]);
 
   useEffect(() => {
-    console.log('no cleanup');
+    console.log("no cleanup");
   }, []);
 }

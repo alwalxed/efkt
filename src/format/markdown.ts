@@ -1,4 +1,4 @@
-import type { ScanResult } from '../types.ts';
+import type { Effect, ScanResult } from '../types.ts';
 
 export function formatMarkdown(result: ScanResult): string {
   const date = result.scannedAt.split('T')[0];
@@ -11,7 +11,8 @@ export function formatMarkdown(result: ScanResult): string {
     `**Date:** ${date}`,
   ];
 
-  const grouped = groupByFile(result.effects);
+  const allEffects: Effect[] = Object.values(result.effects).flat();
+  const grouped = groupByFile(allEffects);
 
   for (const [file, effects] of grouped) {
     lines.push('', '---', '', `## ${file}`);
@@ -41,8 +42,8 @@ export function formatMarkdown(result: ScanResult): string {
   return lines.join('\n');
 }
 
-function groupByFile(effects: ScanResult['effects']): Map<string, ScanResult['effects']> {
-  const map = new Map<string, ScanResult['effects']>();
+function groupByFile(effects: Effect[]): Map<string, Effect[]> {
+  const map = new Map<string, Effect[]>();
   for (const effect of effects) {
     const existing = map.get(effect.file);
     if (existing) {

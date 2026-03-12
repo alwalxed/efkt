@@ -27,23 +27,19 @@ export function AuthForm({ userId, token }: { userId: string; token: string }) {
   expect(exitCode).toBe(0);
   expect(stderr).toBe('');
 
+  type EffectEntry = { file: string; component: string | null; deps: string[] | null; hasCleanup: boolean };
   const parsed = JSON.parse(stdout) as {
     totalFiles: number;
     totalEffects: number;
-    effects: Array<{
-      file: string;
-      component: string | null;
-      deps: string[] | null;
-      hasCleanup: boolean;
-    }>;
+    effects: Record<string, EffectEntry[]>;
   };
 
   expect(parsed.totalFiles).toBe(1);
   expect(parsed.totalEffects).toBe(1);
-  expect(parsed.effects[0].file).toBe('./src/components/Auth.tsx');
-  expect(parsed.effects[0].component).toBe('AuthForm');
-  expect(parsed.effects[0].deps).toEqual(['userId', 'token']);
-  expect(parsed.effects[0].hasCleanup).toBe(false);
+  expect(parsed.effects.deps_noCleanup[0].file).toBe('./src/components/Auth.tsx');
+  expect(parsed.effects.deps_noCleanup[0].component).toBe('AuthForm');
+  expect(parsed.effects.deps_noCleanup[0].deps).toEqual(['userId', 'token']);
+  expect(parsed.effects.deps_noCleanup[0].hasCleanup).toBe(false);
 });
 
 test('Markdown output basic', async () => {

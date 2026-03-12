@@ -36,12 +36,12 @@ export function Ignored() {
   const parsed = JSON.parse(stdout) as {
     totalFiles: number;
     totalEffects: number;
-    effects: Array<{ file: string }>;
+    effects: Record<string, Array<{ file: string }>>;
   };
 
   expect(parsed.totalFiles).toBe(1);
   expect(parsed.totalEffects).toBe(1);
-  expect(parsed.effects[0].file).toBe('./src/components/Included.tsx');
+  expect(parsed.effects.emptyDeps_noCleanup[0].file).toBe('./src/components/Included.tsx');
 });
 
 test('nested .gitignore excludes files', async () => {
@@ -77,10 +77,10 @@ export function Inner() {
   const parsed = JSON.parse(stdout) as {
     totalFiles: number;
     totalEffects: number;
-    effects: Array<{ file: string }>;
+    effects: Record<string, Array<{ file: string }>>;
   };
 
   expect(parsed.totalFiles).toBe(1);
   expect(parsed.totalEffects).toBe(1);
-  expect(parsed.effects[0].file).toBe('./src/components/Included.tsx');
+  expect(parsed.effects.emptyDeps_noCleanup[0].file).toBe('./src/components/Included.tsx');
 });

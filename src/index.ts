@@ -6,7 +6,7 @@ import { extractEffects } from './extract.ts';
 import { formatJson } from './format/json.ts';
 import { formatMarkdown } from './format/markdown.ts';
 import { scanFiles } from './scan.ts';
-import type { Effect, ScanResult } from './types.ts';
+import type { Effect, EffectCategory, GroupedEffects, ScanResult } from './types.ts';
 
 const USAGE = `Usage: efkt [path] [--json | --md]
 
@@ -136,6 +136,34 @@ async function promptFormat(): Promise<'json' | 'md'> {
   });
 }
 
+function classifyEffect(effect: Effect): EffectCategory {
+  if (effect.deps === null) {
+    return effect.hasCleanup ? 'noDeps_withCleanup' : 'noDeps_noCleanup';
+  }
+  if (effect.deps.length === 0) {
+    return effect.hasCleanup ? 'emptyDeps_withCleanup' : 'emptyDeps_noCleanup';
+  }
+  return effect.hasCleanup ? 'deps_withCleanup' : 'deps_noCleanup';
+}
+
+function groupEffects(effects: Effect[]): GroupedEffects {
+  const grouped: GroupedEffects = {
+    noDeps_noCleanup: [],
+    noDeps_withCleanup: [],
+    deps_noCleanup: [],
+    deps_withCleanup: [],
+    emptyDeps_noCleanup: [],
+    emptyDeps_withCleanup: [],
+    other: [],
+  };
+
+  for (const effect of effects) {
+    grouped[classifyEffect(effect)].push(effect);
+  }
+
+  return grouped;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
@@ -186,7 +214,7 @@ async function main() {
     root: args.path,
     totalFiles: files.length,
     totalEffects: allEffects.length,
-    effects: allEffects,
+    effects: groupEffects(allEffects),
   };
 
   process.stdout.write(format === 'json' ? formatJson(result) : formatMarkdown(result));

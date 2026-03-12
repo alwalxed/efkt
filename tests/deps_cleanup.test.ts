@@ -23,14 +23,19 @@ export function UseDeps(a: any, b: any) {
 
   expect(exitCode).toBe(0);
   const parsed = JSON.parse(stdout) as {
-    effects: Array<{ deps: string[] | null }>;
+    effects: Record<string, Array<{ deps: string[] | null }>>;
   };
 
-  expect(parsed.effects[0].deps).toEqual(['a', 'b']);
-  expect(parsed.effects[1].deps).toEqual([]);
-  expect(parsed.effects[2].deps).toEqual(['a.b', 'fn()']);
-  expect(parsed.effects[3].deps).toBeNull();
-  expect(parsed.effects[4].deps).toBeNull();
+  // [a, b] -> deps_noCleanup[0]
+  expect(parsed.effects.deps_noCleanup[0].deps).toEqual(['a', 'b']);
+  // [] -> emptyDeps_noCleanup[0]
+  expect(parsed.effects.emptyDeps_noCleanup[0].deps).toEqual([]);
+  // [a.b, fn()] -> deps_noCleanup[1]
+  expect(parsed.effects.deps_noCleanup[1].deps).toEqual(['a.b', 'fn()']);
+  // undefined as any -> null deps -> noDeps_noCleanup[0]
+  expect(parsed.effects.noDeps_noCleanup[0].deps).toBeNull();
+  // no dep arg -> null deps -> noDeps_noCleanup[1]
+  expect(parsed.effects.noDeps_noCleanup[1].deps).toBeNull();
 });
 
 test('hasCleanup detection', async () => {
@@ -58,9 +63,11 @@ export function UseCleanup(url: string) {
 
   expect(exitCode).toBe(0);
   const parsed = JSON.parse(stdout) as {
-    effects: Array<{ hasCleanup: boolean }>;
+    effects: Record<string, Array<{ hasCleanup: boolean }>>;
   };
 
-  const flags = parsed.effects.map((e) => e.hasCleanup);
-  expect(flags).toEqual([true, false]);
+  // [url] + cleanup -> deps_withCleanup
+  expect(parsed.effects.deps_withCleanup[0].hasCleanup).toBe(true);
+  // [] + no cleanup -> emptyDeps_noCleanup
+  expect(parsed.effects.emptyDeps_noCleanup[0].hasCleanup).toBe(false);
 });

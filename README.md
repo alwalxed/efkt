@@ -22,11 +22,60 @@ efkt [path] [--json | --md]
 
 If neither `--json` nor `--md` is passed and stdin is a TTY, `efkt` prompts once for the format. If stdin is not a TTY and no format flag is given, it prints an error to stderr and exits `1`.
 
+### Output structure
+
+The JSON output groups effects by behavioral category, ordered from highest to lowest likelihood of causing issues:
+
+```json
+{
+  "scannedAt": "2026-03-12T10:10:29.619Z",
+  "root": "./src",
+  "totalFiles": 836,
+  "totalEffects": 179,
+  "effects": {
+    "noDeps_noCleanup": [],
+    "noDeps_withCleanup": [],
+    "deps_noCleanup": [],
+    "deps_withCleanup": [],
+    "emptyDeps_noCleanup": [],
+    "emptyDeps_withCleanup": [],
+    "other": []
+  }
+}
+```
+
+| Category                | Dependency array    | Cleanup |
+| :---------------------- | :------------------ | :------ |
+| `noDeps_noCleanup`      | absent              | no      |
+| `noDeps_withCleanup`    | absent              | yes     |
+| `deps_noCleanup`        | `[dep1, dep2, ...]` | no      |
+| `deps_withCleanup`      | `[dep1, dep2, ...]` | yes     |
+| `emptyDeps_noCleanup`   | `[]`                | no      |
+| `emptyDeps_withCleanup` | `[]`                | yes     |
+| `other`                 | unclassifiable      | —       |
+
+Each effect entry has the shape:
+
+```json
+{
+  "file": "./src/App.tsx",
+  "component": "App",
+  "startLine": 12,
+  "endLine": 18,
+  "body": "...",
+  "deps": ["value"],
+  "hasCleanup": false
+}
+```
+
 ### Examples
 
 ```sh
-# JSON for further processing
-efkt --json | jq '.effects[] | select(.deps == null)'
+# List all effects missing a dependency array
+efkt --json | jq '.effects.noDeps_noCleanup'
+
+# Count effects per category
+efkt --json | jq '.effects | map_values(length)'
 
 # Write a Markdown report
 efkt src/ --md > effects.md

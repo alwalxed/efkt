@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "efkt",
+      "name": "@alwalxed/efkt",
       "dependencies": {
         "@babel/parser": "^7.29.0",
         "@babel/traverse": "^7.29.0",
@@ -16,8 +16,6 @@
         "@types/bun": "latest",
         "husky": "^9.1.7",
         "prettier": "^3.4.2",
-      },
-      "peerDependencies": {
         "typescript": "^5",
       },
     },

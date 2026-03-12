@@ -25,6 +25,7 @@ export function AuthForm() {
     root: string;
     totalFiles: number;
     totalEffects: number;
+    effects: Record<string, Array<unknown>>;
   };
 
   expect(parsed.root).toBe(rel);
@@ -56,10 +57,10 @@ useEffect(() => {}, []);
 
   expect(exitCode).toBe(0);
   const parsed = JSON.parse(stdout) as {
-    effects: Array<{ component: string | null }>;
+    effects: Record<string, Array<{ component: string | null }>>;
   };
 
-  const components = parsed.effects.map((e) => e.component);
+  const components = Object.values(parsed.effects).flat().map((e) => e.component);
   expect(components).toContain('Named');
   expect(components).toContain('Arrow');
   expect(components).toContain(null);
