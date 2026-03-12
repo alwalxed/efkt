@@ -1,6 +1,6 @@
 {
   "name": "@alwalxed/efkt",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Extract useEffect hooks from React codebases in one shot.",
   "module": "src/index.ts",
   "main": "bin/efkt.js",
