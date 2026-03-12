@@ -82,4 +82,7 @@ export default Dashboard;
   expect(stdout).toContain('### ./src/components/Dashboard.tsx');
   expect(stdout).toContain('useEffect(');
   expect(stdout).toContain('```tsx');
+
+  // Code blocks must be dedented: no leading whitespace on the useEffect line
+  expect(stdout).toContain('```tsx\nuseEffect(');
 });

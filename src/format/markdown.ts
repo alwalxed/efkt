@@ -1,6 +1,20 @@
 import type { ScanResult } from '../types.ts';
 import { CATEGORY_KEYS } from '../types.ts';
 
+function dedent(code: string): string {
+  const lines = code.split('\n');
+  const minIndent = lines
+    .filter((line) => line.trim().length > 0)
+    .reduce((min, line) => {
+      const match = line.match(/^(\s*)/);
+      const indent = match?.[1]?.length ?? 0;
+      return Math.min(min, indent);
+    }, Infinity);
+
+  if (minIndent === Infinity || minIndent === 0) return code;
+  return lines.map((line) => line.slice(minIndent)).join('\n');
+}
+
 export function formatMarkdown(result: ScanResult): string {
   const lines: string[] = [
     '# useEffect Report',
@@ -22,7 +36,7 @@ export function formatMarkdown(result: ScanResult): string {
     lines.push('', `## ${key}`);
 
     for (const effect of effects) {
-      lines.push('', `### ${effect.file}`, '', '```tsx', effect.raw, '```');
+      lines.push('', `### ${effect.file}`, '', '```tsx', dedent(effect.raw), '```');
     }
   }
 
