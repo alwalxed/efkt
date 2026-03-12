@@ -170,18 +170,20 @@ function hasReturnStatement(arrow: EffectCallback): boolean {
 
 function statementsHaveReturn(stmts: Statement[]): boolean {
   for (const stmt of stmts) {
-    if (stmt.type === 'ReturnStatement') return true;
+    if (stmt.type === 'ReturnStatement' && stmt.argument != null) return true;
 
     if (stmt.type === 'BlockStatement' && statementsHaveReturn(stmt.body)) return true;
 
     if (stmt.type === 'IfStatement') {
       if (stmt.consequent.type === 'BlockStatement' && statementsHaveReturn(stmt.consequent.body))
         return true;
-      if (stmt.consequent.type === 'ReturnStatement') return true;
+      if (stmt.consequent.type === 'ReturnStatement' && stmt.consequent.argument != null)
+        return true;
       if (stmt.alternate) {
         if (stmt.alternate.type === 'BlockStatement' && statementsHaveReturn(stmt.alternate.body))
           return true;
-        if (stmt.alternate.type === 'ReturnStatement') return true;
+        if (stmt.alternate.type === 'ReturnStatement' && stmt.alternate.argument != null)
+          return true;
       }
     }
 

@@ -16,10 +16,6 @@ function dedent(code: string): string {
   const lines = code.split('\n');
   if (lines.length <= 1) return code;
 
-  // The raw slice always starts at the `u` of `useEffect` (column 0 in the
-  // raw string), but lines after the first retain their original absolute
-  // column positions from the source file. Normalise only lines[1:] so we
-  // compute relative indentation correctly.
   const tail = lines.slice(1);
   const tailNonEmpty = tail.filter((l) => l.trim().length > 0);
   const minIndent =
@@ -35,7 +31,6 @@ function dedent(code: string): string {
     }
   }
 
-  // Detect indent unit via GCD of all non-zero relative indents in the tail
   const nonZero = lines
     .slice(1)
     .filter((l) => l.trim().length > 0)
@@ -60,16 +55,12 @@ function dedent(code: string): string {
 }
 
 function stripComments(code: string): string {
-  // Remove block comments /* ... */ (including multiline), then single-line // comments.
-  // Blank lines left by removed comments are collapsed to preserve structure.
   let result = code.replace(/\/\*[\s\S]*?\*\//g, '');
   result = result.replace(/\/\/[^\n]*/g, '');
-  // Clean up lines that became entirely whitespace after comment removal
   result = result
     .split('\n')
     .map((line) => (line.trim() === '' ? '' : line))
     .join('\n');
-  // Collapse runs of 3+ blank lines down to 2
   result = result.replace(/\n{3,}/g, '\n\n');
   return result.trim();
 }
