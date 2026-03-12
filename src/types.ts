@@ -4,6 +4,7 @@ export interface Effect {
   startLine: number;
   endLine: number;
   body: string;
+  raw: string;
   deps: string[] | null;
   hasCleanup: boolean;
 }

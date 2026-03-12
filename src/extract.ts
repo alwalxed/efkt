@@ -63,6 +63,8 @@ export async function extractEffects(filePath: string, displayPath: string): Pro
       if (!loc) return;
 
       const effectCallback = callback as EffectCallback;
+      const { start, end } = path.node;
+      if (start == null || end == null) return;
 
       effects.push({
         file: displayPath,
@@ -70,6 +72,7 @@ export async function extractEffects(filePath: string, displayPath: string): Pro
         startLine: loc.start.line,
         endLine: loc.end.line,
         body: extractBody(effectCallback, source),
+        raw: source.slice(start, end),
         deps: extractDeps(args[1] as Node | undefined, source),
         hasCleanup: hasReturnStatement(effectCallback),
       });

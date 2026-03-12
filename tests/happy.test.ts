@@ -79,6 +79,7 @@ export default Dashboard;
   expect(stdout).toContain('| totalEffects |');
   expect(stdout).toContain('## emptyDeps_noCleanup');
   expect(stdout).toContain('## noDeps_withCleanup');
-  expect(stdout).toContain('`Dashboard`** in `./src/components/Dashboard.tsx`');
+  expect(stdout).toContain('// ./src/components/Dashboard.tsx');
+  expect(stdout).toContain('useEffect(');
   expect(stdout).toContain('```tsx');
 });

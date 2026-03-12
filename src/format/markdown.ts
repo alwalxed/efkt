@@ -22,16 +22,7 @@ export function formatMarkdown(result: ScanResult): string {
     lines.push('', `## ${key}`, '');
 
     for (const effect of effects) {
-      const name = effect.component ?? '(anonymous)';
-      lines.push(
-        `**\`${name}\`** in \`${effect.file}\` (lines ${effect.startLine}–${effect.endLine})`
-      );
-
-      if (effect.body) {
-        lines.push('', '```tsx', effect.body, '```', '');
-      } else {
-        lines.push('');
-      }
+      lines.push('', '```tsx', `// ${effect.file}`, effect.raw, '```');
     }
   }
 
