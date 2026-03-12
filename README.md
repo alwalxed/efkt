@@ -1,82 +1,110 @@
-## efkt
+<div align="center">
 
-Most codebases abuse `useEffect`. This tool scans your React project, finds every `useEffect` call, and prints a structured report you can review by hand or feed straight into an LLM to surface the worst offenders fast.
+# efkt
 
-### Installation
+**Scan, categorize, and export every `useEffect` in your React project.**
 
+[![npm version](https://img.shields.io/npm/v/@alwalxed/efkt?style=flat-square)](https://www.npmjs.com/package/@alwalxed/efkt)
+[![npm downloads](https://img.shields.io/npm/dm/@alwalxed/efkt?style=flat-square)](https://www.npmjs.com/package/@alwalxed/efkt)
+[![license](https://img.shields.io/github/license/alwalxed/efkt?style=flat-square)](./LICENSE)
+
+</div>
+
+---
+
+`efkt` is a lightweight CLI that parses your React codebase, classifies every `useEffect` by dependency shape and cleanup pattern, and outputs clean **JSON** or **Markdown**, ready for code audits, LLM review, or sharing with your team.
+
+## Features
+
+- Scans `.js`, `.jsx`, `.ts`, `.tsx` files via fast AST parsing
+- Classifies effects into 6 categories (untracked, reactive, once × plain/cleanup)
+- Outputs structured **JSON** or human-readable **Markdown**
+- Optional comment stripping from effect bodies
+- Filter to a single category or cap total results with `--limit`
+
+## Installation
 ```bash
-pnpm install -g @alwalxed/efkt
+pnpm add -g @alwalxed/efkt
+# or
+npm install -g @alwalxed/efkt
+# or
+yarn global add @alwalxed/efkt
 ```
 
-### Usage
-
-```sh
-efkt [path] [--json | --md] [--limit <number>]
+## Usage
+```
+efkt [path] [options]
 ```
 
-- **path**: directory or file to scan (defaults to `./`).
-- **--json**: output a JSON object describing all effects.
-- **--md**: output a Markdown report.
-- **--limit**: cap the number of effects included in the output (also affects `totalEffects`).
-- **--help**: print usage and exit `0`.
-- **--version**: print the version from `package.json` and exit `0`.
+Omitting `[path]` defaults to `./`. Running without `--json` or `--md` in a TTY launches an interactive prompt.
 
-If neither `--json` nor `--md` is passed and stdin is a TTY, `efkt` prompts once for the format. If stdin is not a TTY and no format flag is given, it prints an error to stderr and exits `1`.
+### Options
 
-### Output structure
+| Flag | Description |
+|------|-------------|
+| `--json` | Output structured JSON *(mutually exclusive with `--md`)* |
+| `--md` | Output Markdown report *(mutually exclusive with `--json`)* |
+| `--limit <n>` | Cap total effects to `n`, ordered: untracked → reactive → once |
+| `--case <group.sub>` | Filter to one category, e.g. `untracked.plain` or `reactive.cleanup` |
+| `--strip-comments` | Strip `//` and `/* */` comments from effect bodies |
+| `--help` | Show help and exit |
+| `--version` | Show version and exit |
 
-The JSON output groups effects by behavioral category, ordered from highest to lowest likelihood of causing issues:
+### Effect Categories
 
-```json
-{
-  "scannedAt": "<ISO 8601 timestamp>",
-  "root": "./src",
-  "totalFiles": 836,
-  "totalEffects": 179,
-  "effects": {
-    "noDeps_noCleanup": [],
-    "noDeps_withCleanup": [],
-    "deps_noCleanup": [],
-    "deps_withCleanup": [],
-    "emptyDeps_noCleanup": [],
-    "emptyDeps_withCleanup": []
-  }
-}
-```
+Effects are classified by two axes: **dependency array shape** and **presence of a cleanup `return`**.
 
-| Category                | Dependency array    | Cleanup |
-| :---------------------- | :------------------ | :------ |
-| `noDeps_noCleanup`      | absent              | no      |
-| `noDeps_withCleanup`    | absent              | yes     |
-| `deps_noCleanup`        | `[dep1, dep2, ...]` | no      |
-| `deps_withCleanup`      | `[dep1, dep2, ...]` | yes     |
-| `emptyDeps_noCleanup`   | `[]`                | no      |
-| `emptyDeps_withCleanup` | `[]`                | yes     |
+| Category | Deps | Cleanup | Risk |
+|----------|------|---------|------|
+| `untracked.plain` | absent | ✗ | 🔴 High, likely stale |
+| `untracked.cleanup` | absent | ✓ | 🟠 Medium, High |
+| `reactive.plain` | `[…deps]` | ✗ | 🟡 Medium |
+| `reactive.cleanup` | `[…deps]` | ✓ | 🟢 Recommended |
+| `once.plain` | `[]` | ✗ | 🟡 Low, Medium |
+| `once.cleanup` | `[]` | ✓ | 🟢 Usually safe |
 
-### Examples
+## Examples
+```bash
+# Inspect the most dangerous effects
+efkt --json | jq '.effects.untracked.plain'
 
-```sh
-# List all effects missing a dependency array
-efkt --json | jq '.effects.noDeps_noCleanup'
+# Count effects per subcategory
+efkt --json | jq '.effects | to_entries[] | "\(.key): plain=\(.value.plain | length) cleanup=\(.value.cleanup | length)"'
 
-# Count effects per category
-efkt --json | jq '.effects | map_values(length)'
+# Only reactive effects with cleanup, under src/
+efkt src/ --json --case reactive.cleanup
 
-# Write a Markdown report
-efkt src/ --md > effects.md
+# Generate a Markdown report (great for LLM review or PRs)
+efkt src/ --md --strip-comments > effects-report.md
 
-# Scan a single file
+# Analyze a single file
 efkt src/components/Auth.tsx --json
 
-# Copy to clipboard
+# Cap output in large repos
+efkt ./src --json --limit 25
+
+# Copy report to clipboard (macOS)
 efkt ./src --md | pbcopy
 ```
 
-### Behavior
+## How It Works
 
-- Scans `**/*.{js,jsx,ts,tsx}` under the given path.
-- Detects `useEffect` calls that use arrow function or regular function callbacks.
-- Always ignores `node_modules/`, `dist/`, `build/`, `out/`, `coverage/`, `.next/`, `.turbo/`, `.git/`.
-- Respects `.gitignore` rules at the root and in nested directories.
-- On success (including "no files" or "0 effects found"), exits `0` and writes a complete result to stdout.
-- On any error, writes a message to stderr, exits `1`, and writes nothing to stdout.
+1. Recursively finds `.js/.jsx/.ts/.tsx` files in the target path
+2. Parses each file with a fast AST parser
+3. Locates every `useEffect` call and inspects its arguments:
+   - **No second arg** → `untracked`
+   - **`[]`** → `once`
+   - **`[…deps]`** → `reactive`
+   - **Return function present** → `cleanup` variant
+4. Extracts body, dependencies, file path, line number, and component context
+5. Serializes to JSON or Markdown
+
+## Contributing
+
+`efkt` is intentionally small and focused. If you have ideas for meaningful improvements — better categorization, ignore patterns, richer context extraction — open an issue or send a clean PR.
+
+Please keep PRs scoped and avoid adding heavy dependencies.
+
+## License
+
+[MIT](./LICENSE)
