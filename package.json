@@ -34,6 +34,7 @@
     "lint:ci": "biome check .",
     "format:ci": "biome format . --check",
     "prepare": "husky",
-    "types": "tsc --noEmit --pretty"
+    "types": "tsc --noEmit --pretty",
+    "release": "npm version"
   }
 }
