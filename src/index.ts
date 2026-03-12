@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { stat } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { extractEffects } from './extract.ts';
 import { formatJson } from './format/json.ts';
 import { formatMarkdown } from './format/markdown.ts';
@@ -198,11 +198,14 @@ async function main() {
 
   const resolvedPath = resolve(args.path);
 
+  let statResult: Awaited<ReturnType<typeof stat>>;
   try {
-    await stat(resolvedPath);
+    statResult = await stat(resolvedPath);
   } catch {
     fatal(`path does not exist: ${args.path}`);
   }
+
+  const rootDir = statResult.isDirectory() ? resolvedPath : dirname(resolvedPath);
 
   let format = args.format;
   if (!format) {
@@ -216,6 +219,16 @@ async function main() {
   const files = await scanFiles(args.path);
   const uniqueFiles = [...new Set(files)];
 
+  const displayPaths = new Map<string, string>();
+  for (const file of uniqueFiles) {
+    const rel = relative(rootDir, file) || '';
+    const base = rel === '' ? file : rel;
+    const normalized = base.replace(/^[\\/]+/, '');
+    const display =
+      normalized.startsWith('./') || normalized.startsWith('../') ? normalized : `./${normalized}`;
+    displayPaths.set(file, display);
+  }
+
   if (uniqueFiles.length === 0) {
     process.stderr.write('warning: no .js/.jsx/.ts/.tsx files found\n');
   }
@@ -225,11 +238,13 @@ async function main() {
 
   for (const file of uniqueFiles) {
     try {
-      const effects = await extractEffects(file, file);
+      const displayPath = displayPaths.get(file) ?? file;
+      const effects = await extractEffects(file, displayPath);
       allEffects.push(...effects);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      errors.push(`warning: failed to parse ${file}: ${message}`);
+      const displayPath = displayPaths.get(file) ?? file;
+      errors.push(`warning: failed to parse ${displayPath}: ${message}`);
     }
   }
 

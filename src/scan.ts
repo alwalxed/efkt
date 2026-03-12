@@ -1,5 +1,5 @@
 import { readFile, stat } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import fg from 'fast-glob';
 import ignore from 'ignore';
 
@@ -13,6 +13,8 @@ const ALWAYS_IGNORED = [
   '**/.turbo/**',
   '**/.git/**',
 ];
+
+const MAX_FILES = 10_000;
 
 interface GitignoreFilter {
   dir: string;
@@ -35,7 +37,11 @@ async function loadGitignores(root: string): Promise<GitignoreFilter[]> {
       const ig = ignore().add(content);
       const dir = dirname(p);
       filters.push({ dir: dir === '.' ? '' : dir, ig });
-    } catch {}
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+        process.stderr.write(`Warning: failed to read ${p}: ${(err as Error).message}\n`);
+      }
+    }
   }
 
   return filters;
@@ -43,20 +49,29 @@ async function loadGitignores(root: string): Promise<GitignoreFilter[]> {
 
 function isGitignored(filePath: string, filters: GitignoreFilter[]): boolean {
   for (const { dir, ig } of filters) {
-    if (dir === '' || filePath.startsWith(`${dir}/`)) {
-      const rel = dir === '' ? filePath : filePath.slice(dir.length + 1);
-      if (ig.ignores(rel)) return true;
-    }
+    const rel = dir === '' ? filePath : relative(dir, filePath);
+    if (rel.startsWith('..')) continue;
+    if (ig.ignores(rel)) return true;
   }
   return false;
 }
 
 export async function scanFiles(root: string): Promise<string[]> {
   const abs = resolve(root);
-  const info = await stat(abs);
+
+  let info: Awaited<ReturnType<typeof stat>>;
+  try {
+    info = await stat(abs);
+  } catch (err) {
+    throw new Error(`Cannot access path "${abs}": ${(err as Error).message}`);
+  }
 
   if (info.isFile()) {
-    return [root];
+    return [abs];
+  }
+
+  if (!info.isDirectory()) {
+    throw new Error(`Path "${abs}" is neither a file nor a directory`);
   }
 
   const files = await fg('**/*.{js,jsx,ts,tsx}', {
@@ -66,11 +81,17 @@ export async function scanFiles(root: string): Promise<string[]> {
     dot: false,
   });
 
+  if (files.length > MAX_FILES) {
+    process.stderr.write(
+      `Warning: found ${files.length} files, truncating to ${MAX_FILES}. Consider narrowing the scan path.\n`
+    );
+    files.length = MAX_FILES;
+  }
+
   const gitignoreFilters = await loadGitignores(abs);
 
   const filtered =
     gitignoreFilters.length > 0 ? files.filter((f) => !isGitignored(f, gitignoreFilters)) : files;
 
-  const trailing = root.endsWith('/') ? root : `${root}/`;
-  return filtered.sort().map((f) => trailing + f);
+  return filtered.sort().map((f) => join(abs, f));
 }
