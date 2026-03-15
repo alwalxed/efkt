@@ -89,8 +89,9 @@ test('--case filters Markdown to only show the specified section', async () => {
   expect(stdout).toContain('## 1. untracked');
   expect(stdout).toContain('### 1.1 plain');
   expect(stdout).toContain('#### 1.1.1 ./src/MyComp.tsx');
-  expect(stdout).not.toContain('reactive');
-  expect(stdout).not.toContain('once');
+  expect(stdout).not.toContain('## 1. reactive');
+  expect(stdout).not.toContain('## 1. once');
+  expect(stdout).not.toContain('## 2.');
 });
 
 test('--case with an invalid value exits 1 with an error', async () => {

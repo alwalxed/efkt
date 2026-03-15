@@ -1,6 +1,24 @@
 import type { FormatOptions, ScanResult } from '../types.ts';
 import { GROUP_KEYS, SUBGROUP_KEYS } from '../types.ts';
 
+const HEALTH_LABEL: Record<'good' | 'warning' | 'critical', string> = {
+  good: '🟢 good',
+  warning: '🟡 warning',
+  critical: '🔴 critical',
+};
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
+  });
+}
+
 function gcd(a: number, b: number): number {
   let x = a;
   let y = b;
@@ -74,10 +92,14 @@ export function formatMarkdown(
     '',
     '| Field | Value |',
     '|---|---|',
-    `| scannedAt | ${result.scannedAt} |`,
-    `| root | ${result.root} |`,
-    `| totalFiles | ${result.totalFiles} |`,
-    `| totalEffects | ${result.totalEffects} |`,
+    `| Scanned At | ${formatDate(result.scannedAt)} |`,
+    `| Root | ${result.root} |`,
+    `| Total Files | ${result.totalFiles} |`,
+    `| Total Effects | ${result.totalEffects} |`,
+    ...GROUP_KEYS.flatMap((g) =>
+      SUBGROUP_KEYS.map((s) => `| ${g} (${s}) | ${result.categoryCounts[g][s]} |`)
+    ),
+    `| Health | ${HEALTH_LABEL[result.health]} |`,
     '',
     '---',
   ];

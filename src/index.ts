@@ -12,6 +12,7 @@ import type {
   EffectSubgroup,
   FormatOptions,
   GroupedEffects,
+  HealthStatus,
   ScanResult,
 } from './types.ts';
 import { GROUP_KEYS, SUBGROUP_KEYS } from './types.ts';
@@ -220,6 +221,28 @@ function groupEffects(effects: Effect[]): GroupedEffects {
   return grouped;
 }
 
+function buildCategoryCounts(
+  grouped: GroupedEffects
+): Record<EffectGroup, Record<EffectSubgroup, number>> {
+  return Object.fromEntries(
+    GROUP_KEYS.map((g) => [
+      g,
+      Object.fromEntries(SUBGROUP_KEYS.map((s) => [s, grouped[g][s].length])),
+    ])
+  ) as Record<EffectGroup, Record<EffectSubgroup, number>>;
+}
+
+function deriveHealth(grouped: GroupedEffects): HealthStatus {
+  if (grouped.untracked.plain.length > 0) return 'critical';
+  if (
+    grouped.untracked.cleanup.length > 0 ||
+    grouped.reactive.plain.length > 0 ||
+    grouped.once.plain.length > 0
+  )
+    return 'warning';
+  return 'good';
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
@@ -328,6 +351,8 @@ async function main() {
     root: args.path,
     totalFiles: uniqueFiles.length,
     totalEffects,
+    categoryCounts: buildCategoryCounts(grouped),
+    health: deriveHealth(grouped),
     effects: grouped,
   };
 

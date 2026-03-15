@@ -745,8 +745,8 @@ export function A() { useEffect(() => {}, []); }
 
   const { stdout, exitCode } = await runEfkt(['--md', '.'], dir);
   expect(exitCode).toBe(0);
-  expect(stdout).not.toContain('untracked');
-  expect(stdout).not.toContain('reactive');
+  expect(stdout).not.toContain('## 1. untracked');
+  expect(stdout).not.toContain('## 1. reactive');
   expect(stdout).toContain('once');
 });
 
@@ -770,7 +770,8 @@ export function Comp() {
   expect(stdout).toContain('## 1. untracked');
   expect(stdout).toContain('## 2. once');
   expect(stdout).not.toContain('## 3.');
-  expect(stdout).not.toContain('reactive');
+  expect(stdout).not.toContain('## 2. reactive');
+  expect(stdout).not.toContain('## 3. reactive');
 });
 
 // ─── LIMIT BOUNDARY BEHAVIOR ─────────────────────────────────────────────────

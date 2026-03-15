@@ -17,11 +17,15 @@ export type EffectSubgroup = (typeof SUBGROUP_KEYS)[number];
 
 export type GroupedEffects = Record<EffectGroup, Record<EffectSubgroup, Effect[]>>;
 
+export type HealthStatus = 'good' | 'warning' | 'critical';
+
 export interface ScanResult {
   scannedAt: string;
   root: string;
   totalFiles: number;
   totalEffects: number;
+  categoryCounts: Record<EffectGroup, Record<EffectSubgroup, number>>;
+  health: HealthStatus;
   effects: GroupedEffects;
 }
 
