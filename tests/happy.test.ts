@@ -75,9 +75,11 @@ export default Dashboard;
 
   expect(stdout).toContain('# useEffect Report');
   expect(stdout).toContain('| Scanned At |');
+  expect(stdout).toContain('| Command |');
   expect(stdout).toContain('| Total Files |');
   expect(stdout).toContain('| Total Effects |');
   expect(stdout).toContain('| Health |');
+  expect(stdout).toContain('| Health Reason |');
   // untracked (no dep array, with cleanup) is group 1; once (empty deps, no cleanup) is group 2
   expect(stdout).toContain('## 1. untracked');
   expect(stdout).toContain('### 1.1 cleanup');

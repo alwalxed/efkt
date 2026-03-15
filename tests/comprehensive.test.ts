@@ -695,9 +695,17 @@ export function A() { useEffect(() => {}, []); }
   const parsed = JSON.parse(stdout) as Record<string, unknown>;
   expect(typeof parsed.scannedAt).toBe('string');
   expect(Number.isNaN(new Date(parsed.scannedAt as string).getTime())).toBe(false);
+  expect(typeof parsed.command).toBe('string');
+  expect((parsed.command as string).startsWith('efkt')).toBe(true);
   expect(typeof parsed.root).toBe('string');
   expect(typeof parsed.totalFiles).toBe('number');
   expect(typeof parsed.totalEffects).toBe('number');
+  expect(typeof parsed.categoryCounts).toBe('object');
+  expect(typeof parsed.categoryDescriptions).toBe('object');
+  expect(typeof parsed.health).toBe('string');
+  expect(['good', 'warning', 'critical']).toContain(parsed.health);
+  expect(typeof parsed.healthReason).toBe('string');
+  expect((parsed.healthReason as string).length).toBeGreaterThan(0);
   expect(typeof parsed.effects).toBe('object');
 });
 

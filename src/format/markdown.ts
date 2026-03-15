@@ -93,13 +93,18 @@ export function formatMarkdown(
     '| Field | Value |',
     '|---|---|',
     `| Scanned At | ${formatDate(result.scannedAt)} |`,
+    `| Command | \`${result.command}\` |`,
     `| Root | ${result.root} |`,
     `| Total Files | ${result.totalFiles} |`,
     `| Total Effects | ${result.totalEffects} |`,
     ...GROUP_KEYS.flatMap((g) =>
-      SUBGROUP_KEYS.map((s) => `| ${g} (${s}) | ${result.categoryCounts[g][s]} |`)
+      SUBGROUP_KEYS.map(
+        (s) =>
+          `| ${g} (${s}) | ${result.categoryCounts[g][s]} — ${result.categoryDescriptions[g][s]} |`
+      )
     ),
     `| Health | ${HEALTH_LABEL[result.health]} |`,
+    `| Health Reason | ${result.healthReason} |`,
     '',
     '---',
   ];

@@ -17,6 +17,24 @@ import type {
 } from './types.ts';
 import { GROUP_KEYS, SUBGROUP_KEYS } from './types.ts';
 
+const CATEGORY_DESCRIPTIONS: Record<EffectGroup, Record<EffectSubgroup, string>> = {
+  untracked: {
+    plain:
+      'No dependency array, no cleanup. Reruns on every render. Highest risk of stale closures and infinite loops.',
+    cleanup:
+      'No dependency array, but returns a cleanup function. Still reruns every render; cleanup reduces leak risk.',
+  },
+  reactive: {
+    plain: 'Runs when listed dependencies change. No cleanup, so subscriptions or timers may leak.',
+    cleanup: 'Runs when dependencies change and cleans up before each re-run. Recommended pattern.',
+  },
+  once: {
+    plain:
+      'Empty dependency array, runs once on mount. No cleanup; fine for fire-and-forget fetches.',
+    cleanup: 'Empty dependency array, runs once on mount and cleans up on unmount. Usually safe.',
+  },
+};
+
 const USAGE = `Usage: efkt [path] [--json|--md] [--limit N] [--case <group.sub>] [--strip-comments]
 
 Arguments:
@@ -221,6 +239,10 @@ function groupEffects(effects: Effect[]): GroupedEffects {
   return grouped;
 }
 
+function buildCommand(argv: string[]): string {
+  return ['efkt', ...argv].join(' ');
+}
+
 function buildCategoryCounts(
   grouped: GroupedEffects
 ): Record<EffectGroup, Record<EffectSubgroup, number>> {
@@ -243,8 +265,33 @@ function deriveHealth(grouped: GroupedEffects): HealthStatus {
   return 'good';
 }
 
+function deriveHealthReason(grouped: GroupedEffects, health: HealthStatus): string {
+  if (health === 'good') {
+    return 'All effects use safe patterns (reactive.cleanup or once.cleanup) or no effects were found.';
+  }
+  if (health === 'critical') {
+    const n = grouped.untracked.plain.length;
+    return `${n} untracked.plain effect${n === 1 ? '' : 's'} found — reruns on every render with no cleanup.`;
+  }
+  const parts: string[] = [];
+  if (grouped.untracked.cleanup.length > 0) {
+    const n = grouped.untracked.cleanup.length;
+    parts.push(`${n} untracked.cleanup effect${n === 1 ? '' : 's'}`);
+  }
+  if (grouped.reactive.plain.length > 0) {
+    const n = grouped.reactive.plain.length;
+    parts.push(`${n} reactive.plain effect${n === 1 ? '' : 's'}`);
+  }
+  if (grouped.once.plain.length > 0) {
+    const n = grouped.once.plain.length;
+    parts.push(`${n} once.plain effect${n === 1 ? '' : 's'}`);
+  }
+  return `${parts.join(' and ')} found.`;
+}
+
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const rawArgv = process.argv.slice(2);
+  const args = parseArgs(rawArgv);
 
   if (args.help) {
     process.stdout.write(`${USAGE}\n`);
@@ -346,13 +393,18 @@ async function main() {
     0
   );
 
+  const health = deriveHealth(grouped);
+
   const result: ScanResult = {
     scannedAt: new Date().toISOString(),
+    command: buildCommand(rawArgv),
     root: args.path,
     totalFiles: uniqueFiles.length,
     totalEffects,
     categoryCounts: buildCategoryCounts(grouped),
-    health: deriveHealth(grouped),
+    categoryDescriptions: CATEGORY_DESCRIPTIONS,
+    health,
+    healthReason: deriveHealthReason(grouped, health),
     effects: grouped,
   };
 

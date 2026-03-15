@@ -21,11 +21,14 @@ export type HealthStatus = 'good' | 'warning' | 'critical';
 
 export interface ScanResult {
   scannedAt: string;
+  command: string;
   root: string;
   totalFiles: number;
   totalEffects: number;
   categoryCounts: Record<EffectGroup, Record<EffectSubgroup, number>>;
+  categoryDescriptions: Record<EffectGroup, Record<EffectSubgroup, string>>;
   health: HealthStatus;
+  healthReason: string;
   effects: GroupedEffects;
 }
 
