@@ -271,7 +271,7 @@ function deriveHealthReason(grouped: GroupedEffects, health: HealthStatus): stri
   }
   if (health === 'critical') {
     const n = grouped.untracked.plain.length;
-    return `${n} untracked.plain effect${n === 1 ? '' : 's'} found — reruns on every render with no cleanup.`;
+    return `${n} untracked.plain effect${n === 1 ? '' : 's'} found, reruns on every render with no cleanup.`;
   }
   const parts: string[] = [];
   if (grouped.untracked.cleanup.length > 0) {

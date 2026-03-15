@@ -73,7 +73,7 @@ export default Dashboard;
   expect(exitCode).toBe(0);
   expect(stderr).toBe('');
 
-  expect(stdout).toContain('# efkt results —');
+  expect(stdout).toContain('# efkt results:');
   expect(stdout).toContain('> `efkt');
   expect(stdout).toContain('Health:');
   expect(stdout).toContain('## Distribution');

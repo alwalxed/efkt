@@ -20,12 +20,12 @@ const RISK_LABEL: Record<EffectGroup, Record<EffectSubgroup, string>> = {
 };
 
 const LEGEND_LINES: string[] = [
-  '- **untracked.plain** — no deps, no cleanup → runs every render (highest risk)',
-  '- **untracked.cleanup** — no deps, cleanup present → still runs every render',
-  '- **reactive.plain** — runs on dep changes, no cleanup → subscriptions may leak',
-  '- **reactive.cleanup** — runs on dep changes with cleanup (recommended)',
-  '- **once.plain** — runs once on mount, no cleanup',
-  '- **once.cleanup** — runs once, cleans up on unmount (safest)',
+  '- **untracked.plain**: no deps, no cleanup -> runs every render (highest risk)',
+  '- **untracked.cleanup**: no deps, cleanup present -> still runs every render',
+  '- **reactive.plain**: runs on dep changes, no cleanup -> subscriptions may leak',
+  '- **reactive.cleanup**: runs on dep changes with cleanup (recommended)',
+  '- **once.plain**: runs once on mount, no cleanup',
+  '- **once.cleanup**: runs once, cleans up on unmount (safest)',
 ];
 
 function formatDate(iso: string): string {
@@ -106,7 +106,7 @@ export function formatMarkdown(
   opts: FormatOptions = { stripComments: false }
 ): string {
   const lines: string[] = [
-    `# efkt results — ${result.root}`,
+    `# efkt results: ${result.root}`,
     '',
     `> \`${result.command}\` · ${formatDate(result.scannedAt)} · ${result.totalFiles} files · ${result.totalEffects} effects`,
     '',
