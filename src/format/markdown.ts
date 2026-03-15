@@ -1,21 +1,39 @@
-import type { FormatOptions, ScanResult } from '../types.ts';
+import type {
+  EffectGroup,
+  EffectSubgroup,
+  FormatOptions,
+  HealthStatus,
+  ScanResult,
+} from '../types.ts';
 import { GROUP_KEYS, SUBGROUP_KEYS } from '../types.ts';
 
-const HEALTH_LABEL: Record<'good' | 'warning' | 'critical', string> = {
-  good: '🟢 good',
-  warning: '🟡 warning',
-  critical: '🔴 critical',
+const HEALTH_LABEL: Record<HealthStatus, string> = {
+  good: '🟢 Good',
+  warning: '🟡 Warning',
+  critical: '🔴 Critical',
 };
+
+const RISK_LABEL: Record<EffectGroup, Record<EffectSubgroup, string>> = {
+  untracked: { plain: '🔴 High', cleanup: '🟠 Medium' },
+  reactive: { plain: '🟡 Medium', cleanup: '🟢 Low' },
+  once: { plain: '🟡 Low', cleanup: '🟢 Low' },
+};
+
+const LEGEND_LINES: string[] = [
+  '- **untracked.plain** — no deps, no cleanup → runs every render (highest risk)',
+  '- **untracked.cleanup** — no deps, cleanup present → still runs every render',
+  '- **reactive.plain** — runs on dep changes, no cleanup → subscriptions may leak',
+  '- **reactive.cleanup** — runs on dep changes with cleanup (recommended)',
+  '- **once.plain** — runs once on mount, no cleanup',
+  '- **once.cleanup** — runs once, cleans up on unmount (safest)',
+];
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
     timeZone: 'UTC',
-    timeZoneName: 'short',
   });
 }
 
@@ -88,23 +106,30 @@ export function formatMarkdown(
   opts: FormatOptions = { stripComments: false }
 ): string {
   const lines: string[] = [
-    '# useEffect Report',
+    `# efkt results — ${result.root}`,
     '',
-    '| Field | Value |',
-    '|---|---|',
-    `| Scanned At | ${formatDate(result.scannedAt)} |`,
-    `| Command | \`${result.command}\` |`,
-    `| Root | ${result.root} |`,
-    `| Total Files | ${result.totalFiles} |`,
-    `| Total Effects | ${result.totalEffects} |`,
+    `> \`${result.command}\` · ${formatDate(result.scannedAt)} · ${result.totalFiles} files · ${result.totalEffects} effects`,
+    '',
+    `Health: ${HEALTH_LABEL[result.health]} · ${result.healthReason}`,
+    '',
+    '---',
+    '',
+    '## Distribution',
+    '',
+    '| Category | Count | Risk |',
+    '|---|---:|---|',
     ...GROUP_KEYS.flatMap((g) =>
       SUBGROUP_KEYS.map(
-        (s) =>
-          `| ${g} (${s}) | ${result.categoryCounts[g][s]} — ${result.categoryDescriptions[g][s]} |`
+        (s) => `| ${g}.${s} | ${result.categoryCounts[g][s]} | ${RISK_LABEL[g][s]} |`
       )
     ),
-    `| Health | ${HEALTH_LABEL[result.health]} |`,
-    `| Health Reason | ${result.healthReason} |`,
+    `| **Total** | **${result.totalEffects}** | |`,
+    '',
+    '---',
+    '',
+    '## Legend',
+    '',
+    ...LEGEND_LINES,
     '',
     '---',
   ];
